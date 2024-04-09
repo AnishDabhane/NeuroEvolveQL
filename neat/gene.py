@@ -8,7 +8,7 @@ class Gene:
         self.in_node = i
         self.out_node = o
         # gene weight
-        self.weight = random.random() * 4 - 2  # (-2,2)
+        self.weight = random.random() * 4 - 2  # range:(-2,2)
         # innovation ID (unique number that tracks the historical lineage of that gene)
         self.inno = -1
         # enabled -> gene is active
