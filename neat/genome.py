@@ -5,40 +5,45 @@ import random
 import numpy as np
 import math
 
-# genome represents an individual neural network architecture
+# genome represents an individual neural network
 class Genome:
     
+    # Constructor
     def __init__(self, gh):
         # Ref to gene history(gh)
         self.gh = gh
-        # Copying inputs/outputs
+        # Copying number of inputs and outputs (int)
         self.n_inputs = gh.n_inputs
         self.n_outputs = gh.n_outputs
-        # Total Nodes (used as ctr)
+        # Total Nodes (used as counter)
         self.total_nodes = 0
 
-        # Nodes and genes
+        # List of nodes and genes (objects)
         self.nodes = []
         self.genes = []
 
-        #batch size 
+        # batch size controls how much the neural network learns in one "step" during training.
         self.batch_size = 32 # update the same value in a agent file (line no 17)
 
         # Random fitness for now
+        # fitness refers to a score that evaluates the performance of a particular neural network 
         self.fitness = random.uniform(-2, 2)
         self.adjusted_fitness = 0
 
         # Input nodes
         for _ in range(self.n_inputs):
+            # appending all input nodes in the nodes list and incrementing the counter(total_nodes)
             self.nodes.append(Node(self.total_nodes, 0))
             self.total_nodes += 1
 
         # output nodes
         for _ in range(self.n_outputs):
+            # appending all output nodes in the nodes list and incrementing the counter(total_nodes)
             self.nodes.append(Node(self.total_nodes, 1))
             self.total_nodes += 1
         pass
 
+    # creates a clone of existing genome and returns the same
     def clone(self):
         clone = Genome(self.gh)
         clone.total_nodes = self.total_nodes
@@ -54,7 +59,7 @@ class Genome:
         clone.connect_genes()
         return clone
 
-    # Gene with inno exists
+    # check whether gene with an innovation number exists
     def exists(self, inno):
         for g in self.genes:
             if g.inno == inno:
@@ -72,18 +77,23 @@ class Genome:
         c = self.gh.exists(n1, n2)
         x = Gene(n1, n2)
 
+        # if gene already exists (True) in gene_history
+        # i doubt here 
         if c:
             x.inno = c.inno
+            # if disabled hai then append in genes list
             if not self.exists(x.inno):
                 self.genes.append(x)
+        # if doesn't exists in the gene history
         else:
+            # assign new innnovation number
             x.inno = self.gh.global_inno
             self.gh.global_inno += 1
             self.gh.all_genes.append(x.clone())
             self.genes.append(x)
         pass
 
-    # Mutate add gene
+    # Adding a Connection (Weight Mutation):
     def add_gene(self):
         n1 = random.choice(self.nodes)
         n2 = random.choice(self.nodes)
@@ -92,6 +102,7 @@ class Genome:
             n1 = random.choice(self.nodes)
             n2 = random.choice(self.nodes)
 
+        # connecting to random nodes
         self.connect_nodes(n1, n2)
         pass
 
@@ -103,12 +114,16 @@ class Genome:
         if random.random() < 0.8:
             for i in range(len(self.genes)):
                 self.genes[i].mutate()
+
+        # Adding a Connection (Weight Mutation):
         if random.random() < 0.08:
             self.add_gene()
+        # Adding a Node (Node Mutation):
         if random.random() < 0.02:
             self.add_node()
         pass
-
+    
+    # helper function to get node from its number
     def get_node(self, n):
         for i in range(len(self.nodes)):
             if self.nodes[i].number == n:
@@ -123,15 +138,18 @@ class Genome:
             self.genes[i].out_node = self.get_node(self.genes[i].out_node.number)
 
         for i in range(len(self.nodes)):
+            # clearing the in_genes list of all the nodes
             self.nodes[i].in_genes.clear()
 
         # Add in_genes
         for i in range(len(self.genes)):
+            # updating the in_genes of all the nodes
             self.genes[i].out_node.in_genes.append(self.genes[i])
         pass
     
-    def seperate(self):
-        # Seperating the nodes layer-wise
+    # Seperating the nodes layer-wise
+    def seperate_nodes(self):
+        # this should to dynamic
         self.Input_Layer=[]
         self.Output_Layer=[]
         self.HL_1=[]
@@ -158,7 +176,7 @@ class Genome:
             #print(f"feed inputs: ",inputs[i])
             #print(f"feed n_inputs: ",self.n_inputs)
             if len(inputs[i]) != self.n_inputs:
-                print("Wrong number of inputs")
+                print("Error in no of inputs specifies (n_inputs) and that received while backpropagation.")
                 return [-1]
 
             # Input layers outputs are the specified inputs
@@ -166,10 +184,10 @@ class Genome:
                 self.nodes[j].sum=inputs[i][j]
                 self.nodes[j].output = inputs[i][j]
 
-            # Connect genes (Clean references)
+            # Connect genes (Clean previous references)
             self.connect_genes()
 
-            # calculate layer wise
+            # calculate hidden layer's nodes output layerwise
             for layer in range(2, self.gh.highest_hidden + 1):
                 nodes_in_layer = []
                 for n in range(len(self.nodes)):
@@ -179,8 +197,7 @@ class Genome:
                 for n in range(len(nodes_in_layer)):
                     nodes_in_layer[n].calculate()
 
-            # calculate final outputs at last
-            #final_outputs = np.zeros((self.batch_size, self.n_outputs))
+            # calculate final outputs at last layer (output layer)
             j=0
             for n in range(self.n_inputs, self.n_inputs + self.n_outputs):
                 self.nodes[n].calculate()
@@ -197,7 +214,7 @@ class Genome:
         # print(f"Target:",target)
         # print(f"Pred:",pred)
         if len(target)!=len(pred):
-            print("Unequal length of inputs and outputs")
+            print("Unequal length of inputs and outputs while calculating MSE")
 
         self.squared_difference = [(target[i]-pred[i])**2 for i in range(len(pred))]
         # print(f"squared:",self.squared_difference)
@@ -210,19 +227,17 @@ class Genome:
         return self.sigmoid(x) * (1 - self.sigmoid(x))
     
 
-    def backpropogate(self,inputs,targets):
+    def backpropogate(self,inputs,targets,learning_rate=0.001):
         #print(f"back inputs:",inputs)
         #print(f"back targets:",targets)
+
         #learning_rate
-        self.lr=0.001
-        #calling seprate function to get the layerwise list
-        self.seperate()
-        
-            # generating the outputs
+        self.lr=learning_rate
+        # calling seprate function to get the layerwise list
+        self.seperate_nodes()
+        # generating the outputs by feed forwarding the inputs
         self.predicted_output=self.feed_forward(inputs)
         #print("back predicted_output:",self.predicted_output)
-
-
 
         for k in range(len(inputs)): # loop for batched inputs
 
@@ -275,7 +290,7 @@ class Genome:
         print(f"mse:",self.mean_squared_error(targets,self.feed_forward(inputs)))
         pass
     
-    # get weight of gene of inno
+    # get weight of a gene through innovation number
     def get_weight(self, inno):
         for g in self.genes:
             if g.inno == inno:
@@ -338,14 +353,15 @@ class Genome:
         return cd
 
     # Mutate add node
-    def add_node(self):
+    def add_node(self): 
+        # Adding node between any random gene
         if len(self.genes) == 0:
             self.add_gene()
 
-        if random.random() < 0.2:
-            self.gh.highest_hidden += 1
+        # if random.random() < 0.2:
+        #     self.gh.highest_hidden += 1
 
-        n = Node(self.total_nodes, random.randint(2, self.gh.highest_hidden))
+        new_node = Node(self.total_nodes, random.randint(2, self.gh.highest_hidden))
         self.total_nodes += 1
 
         g = random.choice(self.genes)
@@ -354,22 +370,22 @@ class Genome:
         if l2 == 1:
             l2 = 1000000
 
-        while l1 > n.layer or l2 < n.layer:
+        while l1 > new_node.layer or l2 < new_node.layer:
             g = random.choice(self.genes)
             l1 = g.in_node.layer
             l2 = g.out_node.layer
             if l2 == 1:
                 l2 = 1000000
 
-        self.connect_nodes(g.in_node, n)
-        self.connect_nodes(n, g.out_node)
+        self.connect_nodes(g.in_node, new_node)
+        self.connect_nodes(new_node, g.out_node)
         self.genes[-1].weight = 1.0
         self.genes[-2].weight = g.weight
         g.enabled = False
-        self.nodes.append(n)
+        self.nodes.append(new_node)
         pass
 
-    # Get Some info
+    # Get info related to all the genes present in genome
     def get_info(self) -> str:
         s = "Genome -----------------------\n"
         for g in self.genes:
@@ -381,24 +397,30 @@ class Genome:
     def __str__(self):
         return self.get_info()
 
-    # For showing
+    # For visualization purpose only
     def show(self, ds):
         ds.fill((255, 255, 255, 0))
         # Set Positions
         w, h = ds.get_size()
         vert_gap = h / (self.n_inputs + 1)
+
+        #for input layer nodes
         for i in range(self.n_inputs):
             self.nodes[i].pos = [30, self.nodes[i].number * vert_gap + vert_gap]
+
+        #for output layer nodes
         vert_gap = h / (self.n_outputs + 1)
         for i in range(self.n_inputs, self.n_inputs + self.n_outputs):
             self.nodes[i].pos = [
                 w - 30,
                 (self.nodes[i].number - self.n_inputs) * vert_gap + vert_gap,
             ]
+        
+        # for hidden layer nodes
         vert_gap = h / ((len(self.nodes) - (self.n_inputs + self.n_outputs)) + 1)
         for i in range(self.n_inputs + self.n_outputs, len(self.nodes)):
             self.nodes[i].pos = [
-                w / 2,
+                self.nodes[i].layer*120,
                 (self.nodes[i].number - self.n_inputs - self.n_outputs) * vert_gap
                 + vert_gap,
             ]
