@@ -4,7 +4,7 @@ class GeneHistory:
         self.n_inputs = n_inputs
         # no of outputs(int)
         self.n_outputs = n_outputs
-        # All Genes in existence
+        # list of all the genes that are in existence
         self.all_genes = []
         # Global highest innovation
         self.global_inno = 0
