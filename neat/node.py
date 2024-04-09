@@ -18,7 +18,7 @@ class Node:
         # Sigmoid activation
         self.sigmoid = lambda x : 1 / (1 + math.exp(-x))
 
-        # For Showing
+        # For Visualization purpose only
         self.color = (255, 255, 255)
         self.bcolor = (0, 0, 0)
         self.radius = 7

@@ -27,11 +27,13 @@ class Gene:
         g.inno = self.inno
         return g
     
-    # Simple mutations to weight
+    # Weight Perturbation: modifies the weight of an existing connection within a predefined range.
     def mutate(self):
         if random.random() < 0.1:
-            self.weight = random.random() * 4 - 2  # (-2,2)
+            #self.weight = random.random() * 4 - 2  # (-2,2)
+            self.weight = random.uniform(-2,2)  
         else:
+            # randomly changiing the weights
             self.weight += random.uniform(-0.2, 0.2)
             # Clamping
             self.weight = self.weight if self.weight < 2 else 2
