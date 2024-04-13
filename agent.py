@@ -46,18 +46,18 @@ class DQNagent:
           for i, (state, action, reward, next_state, done) in enumerate(zip(states, actions, rewards, next_states, dones)):
               target_q_value = reward
               if not done:
-                  print(f"next_state:",np.array([next_state]))
+                  #print(f"next_state:",np.array([next_state]))
                   next_q_values = self.target_model.predict(np.array([next_state]))[0]
                   target_q_value += self.gamma * np.max(next_q_values)
 
               q_values = self.model.predict(np.array([state]))[0]
-              print(f"q_values",q_values)
-              print(f"action:",action)
+              #print(f"q_values",q_values)
+              #print(f"action:",action)
               q_values[action] = target_q_value
               updated_q_values[i] = q_values
 
-          print(f"states:",np.array(states))
-          print(f"updated_q_values",updated_q_values)
+          #print(f"states:",np.array(states))
+          #print(f"updated_q_values",updated_q_values)
           self.model.fit(np.array(states), updated_q_values, epochs=1, verbose=0)
 
 
